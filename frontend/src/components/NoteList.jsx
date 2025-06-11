@@ -44,6 +44,37 @@ const NoteList = () => {
     }
   };
 
+  const handleUpdate = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/notes/${id}`,{
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        }, 
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+        })
+      });
+      if(!res.ok){
+        throw new Error("Failed to update the note.");
+      }
+      
+      
+      const updatedNote = await res.json();
+      setNotes((prev) => 
+        prev.map((note) => (note._id === id ? updatedNote : note))
+      );
+
+      setEditingNoteId(null);
+      setEditTitle("");
+      setEditContent("");
+
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
   if (isLoading) return <p className="text-center text-gray-500">Loading...</p>;
   if (error) return <p className="text-center text-red-500">{error}</p>;
   return (
@@ -55,17 +86,59 @@ const NoteList = () => {
             key={note._id}
             className="bg-white rounded-xl p-4 shadow hover:shadow-lg transition"
           >
-            <h3 className="text-lg font-semibold">{note.title}</h3>
-            <p className="text-gray-600 mt-2">{note.content}</p>
-            <p className="text-xs text-gray-400 mt-4">
-              Created at: {new Date(note.createdAt).toLocaleString()}
-            </p>
-            <button
-              className="bg-red-500 p-3 mt-10 text-white rounded-md hover:shadow-lg hover:opacity-95"
-              onClick={() => handleDeleteButton(note._id)}
-            >
-              Delete
-            </button>
+            {editingNoteId === note._id ? (
+              <div>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full p-2 border rounded mb-2"
+                />
+                <textarea
+                  name="text"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full p-2 border rounded mb-2"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleUpdate(note._id)}
+                    className="bg-green-600 text-white px-3 py-1 rounded"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingNoteId(null)}
+                    className="bg-gray-300 px-3 py-1 rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h3 className="text-lg font-semibold">{note.title}</h3>
+                <p className="text-gray-600 mt-2">{note.content}</p>
+                <p className="text-xs text-gray-400 mt-4">
+                  Created at: {new Date(note.createdAt).toLocaleString()}
+                </p>
+                <button
+                  className="bg-red-500 p-3 mt-10 text-white rounded-md hover:shadow-lg hover:opacity-95"
+                  onClick={() => handleDeleteButton(note._id)}
+                >
+                  Delete
+                </button>
+                <button className="bg-blue-500 p-3 m-6 text-white rounded-md hover:shadow-lg hover:opacity-95"
+                  onClick={() => {
+                            setEditingNoteId(note._id);
+                            setEditTitle(note.title);
+                            setEditContent(note.content);
+                          }}
+                >
+                  Edit
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
